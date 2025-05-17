@@ -7,16 +7,30 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="theme-toggle">
+      <label class="switch">
+        <input type="checkbox" id="theme-toggle" />
+        <span class="slider"></span>
+      </label>
+    </div>
     <div class="container">
       <h1>Text to Speech Converter</h1>
-      <textarea
-        id="text-input"
-        placeholder="Type any text you want ..."
-      ></textarea>
+      <textarea id="text-input" placeholder="Type your text here..."></textarea>
+      <div class="settings">
+        <label for="rate">Speech Rate:</label>
+        <input
+          type="range"
+          id="rate"
+          min="0.1"
+          max="2.0"
+          step="0.1"
+          value="1.0"
+        />
+        <span id="rate-value">1.0</span>
+      </div>
       <button id="submit-btn">Submit</button>
       <div id="lines-container"></div>
     </div>
-
     <script src="script.js"></script>
   </body>
 </html>
