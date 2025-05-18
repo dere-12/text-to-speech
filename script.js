@@ -39,6 +39,16 @@ function speakText(text) {
   const speech = new SpeechSynthesisUtterance(text);
   setDefaultUSVoice(speech);
   speech.rate = parseFloat(document.getElementById("rate").value);
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(speech);
+}
+
+// Speak all text at once
+function speakAllText(text) {
+  const speech = new SpeechSynthesisUtterance(text);
+  setDefaultUSVoice(speech);
+  speech.rate = parseFloat(document.getElementById("rate").value);
+  window.speechSynthesis.cancel();
   window.speechSynthesis.speak(speech);
 }
 
@@ -55,16 +65,60 @@ function loadLastText() {
   }
 }
 
-// Toggle visibility of long text
-function toggleLinesVisibility(container, isExpanded) {
+// Create the "Speak All" button
+function createSpeakAllButton(text) {
+  const speakAllButton = document.createElement("button");
+  speakAllButton.textContent = "Speak All";
+  speakAllButton.classList.add("speak-all-button");
+  speakAllButton.style.display = "none"; // Hidden initially
+
+  speakAllButton.addEventListener("click", () => {
+    speakAllText(text);
+  });
+
+  return speakAllButton;
+}
+
+// Toggle visibility of long text and manage the Speak All button
+
+// Toggle visibility of long text and manage the Speak All button
+function toggleLinesVisibility(container, isExpanded, text) {
   const lines = container.querySelectorAll(".line-text");
+  const speakAllButton = document.querySelector(".speak-all-button");
+
+  // Toggle line visibility
   lines.forEach((line, index) => {
     line.style.display = isExpanded || index < 3 ? "flex" : "none";
   });
+
+  // Always show the "Speak All" button if text is short or expanded
+  if (lines.length <= 3 || isExpanded) {
+    speakAllButton.style.display = "block";
+  } else {
+    speakAllButton.style.display = "none";
+  }
+}
+
+// Create the "Speak All" button container
+function createSpeakAllContainer(text) {
+  const container = document.createElement("div");
+  container.classList.add("speak-all-container");
+
+  const speakAllButton = document.createElement("button");
+  speakAllButton.textContent = "Speak All";
+  speakAllButton.classList.add("speak-all-button");
+  speakAllButton.style.display = "none"; // Hidden initially
+
+  speakAllButton.addEventListener("click", () => {
+    speakAllText(text);
+  });
+
+  container.appendChild(speakAllButton);
+  return container;
 }
 
 // Create the "See More/Less" button
-function createToggleButton(container) {
+function createToggleButton(container, text) {
   const toggleButton = document.createElement("button");
   toggleButton.textContent = "See More";
   toggleButton.classList.add("see-more");
@@ -74,12 +128,13 @@ function createToggleButton(container) {
     toggleButton.textContent = isExpanded ? "See More" : "See Less";
     toggleButton.classList.toggle("see-more", isExpanded);
     toggleButton.classList.toggle("see-less", !isExpanded);
-    toggleLinesVisibility(container, !isExpanded);
+    toggleLinesVisibility(container, !isExpanded, text);
   });
 
   return toggleButton;
 }
 
+// Handle text submission and display
 // Handle text submission and display
 function handleTextSubmission(text, linesContainer) {
   if (text.trim() === "") {
@@ -99,6 +154,10 @@ function handleTextSubmission(text, linesContainer) {
     lines.push(line);
   }
 
+  // Create a fragment for better performance
+  const fragment = document.createDocumentFragment();
+
+  // Add each line with a "Speak" button
   lines.forEach((line, index) => {
     const lineDiv = document.createElement("div");
     lineDiv.classList.add("line-text");
@@ -114,15 +173,28 @@ function handleTextSubmission(text, linesContainer) {
 
     lineDiv.appendChild(lineText);
     lineDiv.appendChild(speakButton);
+    fragment.appendChild(lineDiv);
 
+    // Initially show only the first 3 lines
     if (index >= 3) lineDiv.style.display = "none";
-    linesContainer.appendChild(lineDiv);
   });
 
+  // Create "Speak All" button and place after the last line
+  const speakAllContainer = createSpeakAllContainer(text);
+  fragment.appendChild(speakAllContainer);
+
+  // Add "See More/Less" button if needed
   if (lines.length > 3) {
-    const toggleButton = createToggleButton(linesContainer);
-    linesContainer.appendChild(toggleButton);
+    const toggleButton = createToggleButton(linesContainer, text);
+    fragment.appendChild(toggleButton);
+  } else {
+    // Show the Speak All button if text is short (1-3 lines)
+    speakAllContainer.querySelector(".speak-all-button").style.display =
+      "block";
   }
+
+  // Append the fragment to the container
+  linesContainer.appendChild(fragment);
 }
 
 // Event listener for the submit button
@@ -137,7 +209,7 @@ document.getElementById("rate").addEventListener("input", function () {
   document.getElementById("rate-value").textContent = this.value;
 });
 
-// Load voices and last text on page load
+// Load theme, voices, and last text on page load
 window.addEventListener("load", () => {
   loadTheme();
   loadLastText();
